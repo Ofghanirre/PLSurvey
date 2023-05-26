@@ -9,7 +9,7 @@ Currently only being able to generate histograms
 Contact: ofghanirre@gmail.com
 """
 
-import json
+import json,sys
 from typing import Tuple
 
 # Globals
@@ -19,6 +19,7 @@ SCRIPT = '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>'
 def count_occurences(votes : list, labels : list) -> dict:
     occurrences = {l : 0 for l in labels}
     for vote in votes:
+        print(vote, occurrences, file=sys.stderr)
         if vote in occurrences:
             occurrences[vote] += 1
         else:
@@ -36,7 +37,8 @@ def generer_histogramme(
         title : str             = "Statistiques",
         backgroundColor : str   = 'rgba(75, 192, 250, 0.2)',
         borderColor : str       = 'rgba(75, 192, 250, 1)',
-        borderWidth : int       = 1) -> str:
+        borderWidth : int       = 1,
+        vertical = True) -> str:
     # Extraire les valeurs
     valeurs, frequences = generate_histogram_data(votes, labels)
     # Créer le dictionnaire de données pour Chart.js
@@ -67,6 +69,7 @@ def generer_histogramme(
                     type: 'bar',
                     data: donnees,
                     options: {{
+                        indexAxis: {'x' if vertical else 'y'},
                         responsive: true,
                         scales: {{
                             y: {{

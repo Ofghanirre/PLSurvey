@@ -4,6 +4,13 @@ title = Exercice d'exemple | RadioGroup
 
 text==#|markdown|
 Ceci est un exemple d'exercice visant à montrer l'utilisation de l'activité PL [`RadioSurvey.pl` dont voici la documentation](filebrowser/option?name=test_pl&path=Yggdrasil/AAAA/Antonin/activities/RadioSurvey.pl).
+
+Il contient l'affichage des réponses par question ainsi que l'affichage des deux graphes par défaut optionnels:
+
+- statistiques des scores 
+
+- statistiques de participation
+
 ==
 
 question_1 = Que pensez vous de cet exercice?

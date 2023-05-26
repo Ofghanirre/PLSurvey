@@ -1,102 +1,63 @@
-@database_utils.py
-@graph_utils.py
-@stats_utils.py
-@database_name.py
-@utils.py
+@utils/database_utils.py
+@utils/graph_utils.py
+@utils/stats_utils.py
+@utils/utils.py
 
 @ /utils/sandboxio.py
 builder =@ statbefore.py
 grader  =@ statevaluator.py
 
-################### Modifier ici ###########################
+# ===============================================
+# Documentation Loading
+evaluation =@ docs/stats/evaluation.md
+options =@ docs/stats/options.md
+summary =@ docs/stats/summary.md
+user_manual =@ docs/stats/user_manual.md
+# ===============================================
 author = Thomas Saillard & Antonin Jean
-
-# Ecrire un titre ici
 title= Statistic Activity
-
-# Ecrire un énoncé ici
 text ==#|markdown|
-Ici vous pouvez définir une activité intégrant un système de statistiques:
+# Documentation:
 
-- affichage de graphe (histogramme) représentant les données pour l'enseignant
-
-- récupération des entrées au format `csv`
+{{summary}}
 
 ---
 
-**Manuel utilisateur:**
+## Manuel Utilisateur:
 
-Pour ce faire vous devez définir les variables globales suivantes:
+{{user_manual}}
 
-- **`data`** : dictionnaire contenant les données au format : 
+---
 
-    - **key   :** str : nom graphe
-
-    - **value :** list : Couple contenant les labels (valeurs possibles) et les values (valeurs)
-        
-        - **labels :** list : valeurs possibles (seront représentées sur l'histogramme)
-
-        - **values :** list : valeurs à afficher dans l'histogramme
-
-    Exemple: 
-    
-    - ```data % {"test1": [[0,1,2,3], [1,2,2,3,3,3]], "test": [["rien", "coucou", "test", "a"], ["coucou", "test", "a", "a"]]}```
-
-- **`answer_csv`** : string représentant le format d'une ligne du csv
-
-    Exemple: 
-    
-    - ```answer_csv="username,firsname,lastname,email,title,statement,grade\\n"```
-
-- **`formstudent`** : block html au format string représentant la partie jouable par un utilisateur lambda
-
-    Exemple: 
-    
-    `formstudent==#|html|`
-
-    `<h2> Hello World ! </h2>`
-    
-    `==`
-
-
-<u>**Options:**</u>
+## Options:
 
 {{options}}
 
 ---
+
+## Evaluation
+
+{{evaluation}}
+
+---
 ==
 
-options==#|markdown|
-
-[Options stats.pl](https://pl-preprod.u-pem.fr/filebrowser/option?name=test_pl&path=Yggdrasil/AAAA/Antonin/stats.pl)
-
--  **`include_stats_score`** : `Boolean`   -   Défaut: `False`
-
-    - Afficher le graphe représentant le score des utilisateurs
-
-    Exemple:
-
-    - ```include_stats_score = True```
-
--  **`include_stats_participation`** : `Boolean`   -   Défaut: `False`
-
-    - Afficher le graphe représentant le taux de participation des utilisateurs
-
-    Exemple:
-
-    - ```include_stats_participation = True```
-==
-
+# ===============================================
 # Flags:
+# ===============================================
 # Statistiques de score:
 include_stats_score = False
 # Statistiques de participation:
 include_stats_participation = False
+# Barres Horizontales:
+horizontale = False
 
-############################################
+# ===============================================
+# Values required for the program to work
+# ===============================================
+# Can (should) be redefined in implementations (see doc)
 data % {"test1": [[0,1,2,3], [1,2,2,3,3,3]], "test":  [["rien", "coucou", "test", "a"], ["coucou", "test", "a", "a"]]}
-dataType % {"type": "Response"}
-answer_csv="username,firsname,lastname,email,title,statement,grade\\n"
+answers_csv="username,firsname,lastname,email,title,statement,grade\\n"
 formstudent==#|html|
 <style>
 .ascii-animation { 
@@ -140,63 +101,70 @@ formstudent==#|html|
 </div>
 ==
 
+# ===============================================
+# Stat handling
+# ===============================================
 before_stat==#|python|
-
 with open("database_utils.py", "r+") as f:
     f.seek(0, 0)
     f.write(f"activity_id={activity__id}")
 
-from database_utils import get_session, Base, Response, CodeEditorResponse
+from database_utils import get_session, get_session, Base, Response
 from stats_utils import Stat, StatInput
 from utils import *
-log(dataType["type"])
-a = eval(dataType["type"])
-log(globals())
-log(type(a))
-log(type(Response))
-log(a)
-log_print()
+
 with get_session(table_class= Response, base=Base) as session:
     HAS_ANSWERED = (session.query(Response).filter(Response.student_id == user__id).first()) != None
 ==
+# ===============================================
+# Data handling
+# ===============================================
 
 before==#|python|
 # Nothing, work is done in implementations
 # needs to be overwriten
 ==
 
+# ===============================================
+# Graph generation
+# ===============================================
 before_graph==#|python|
 from collections import Counter
-# GRAPH GENERATION
-statInputs = [StatInput(title, values, labels) for title, (labels, values) in data.items()]
-if (include_stats_score != "False"):
-    values = []
-    labels = []
-    with get_session(table_class=Response, base=Base) as session:
-        answers = session.query(Response.grade).all()
-    for answer in answers:
-        values.append(answer[0]) # mapping row -> int
-    [labels.append(x) for x in values if x not in labels]
-    labels.sort()
-    statInputs.append(StatInput("__Score__", values, labels))
-if (include_stats_participation != "False"):
-    values = []
-    labels = []
-    with get_session(table_class=Response, base=Base) as session:
-        answers = session.query(Response.student_id).all()
-    for answer in Counter(answers).values():
-        values.append(answer) # mapping row -> int
-    [labels.append(x) for x in values if x not in labels]
-    labels.sort()
 
-    statInputs.append(StatInput("__Participation__", values, labels))
-stat = Stat(statInputs)
+if user__role == "teacher":
+    statInputs = [StatInput(title, values, labels) for title, (labels, values) in data.items()]
+    if (include_stats_score != "False"):
+        values = []
+        labels = []
 
-graphContent = stat.get_graph_as_html(containsScript=True)
+        with get_session(table_class=Response, base=Base) as session:
+            answers = session.query(Response.grade).all()
+        for answer in answers:
+            values.append(answer[0]) # mapping row -> int
+        [labels.append(x) for x in values if x not in labels]
+        labels.sort()
+        statInputs.append(StatInput("__Score__", values, labels))
+    if (include_stats_participation != "False"):
+        values = []
+        labels = []
+
+        with get_session(table_class=Response, base=Base) as session:
+            answers = session.query(Response.student_id).all()
+        for answer in Counter(answers).values():
+            values.append(answer) # mapping row -> int
+        [labels.append(x) for x in values if x not in labels]
+        labels.sort()
+
+        statInputs.append(StatInput("__Participation__", values, labels))
+    stat = Stat(statInputs)
+
+    graphContent = stat.get_graph_as_html(containsScript=True)
 ==
 
+# FORM PLAYER
+# change line {% if user__role == "teacher" %} to {% if user__role != "teacher" %} to access student mode
 form==#|html|
-{% if user__role != "teacher" %}
+{% if user__role == "teacher" %}
 <style>
     .graph {
         display:flex;
